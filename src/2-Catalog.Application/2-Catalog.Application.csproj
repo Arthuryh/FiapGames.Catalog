@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="DTOs\Biblioteca\" />
+        <Folder Include="DTOs\Compra\" />
+        <Folder Include="DTOs\Jogo\" />
+        <Folder Include="DTOs\Promocao\" />
+        <Folder Include="Interfaces\Biblioteca\" />
+        <Folder Include="Interfaces\Compra\" />
+        <Folder Include="Interfaces\Jogo\" />
+        <Folder Include="Interfaces\Promocao\" />
+        <Folder Include="Services\Biblioteca\" />
+        <Folder Include="Services\Compra\" />
+        <Folder Include="Services\Jogo\" />
+        <Folder Include="Services\Promocao\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\3-Catalog.Infrastructure\3-Catalog.Infrastructure.csproj" />
+        <ProjectReference Include="..\4-Catalog.Domain\4-Catalog.Domain.csproj" />
+    </ItemGroup>
+</Project>
