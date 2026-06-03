@@ -6,21 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="DTOs\Biblioteca\" />
-        <Folder Include="DTOs\Compra\" />
-        <Folder Include="DTOs\Jogo\" />
-        <Folder Include="DTOs\Promocao\" />
-        <Folder Include="Interfaces\Biblioteca\" />
-        <Folder Include="Interfaces\Compra\" />
-        <Folder Include="Interfaces\Jogo\" />
-        <Folder Include="Interfaces\Promocao\" />
-        <Folder Include="Services\Biblioteca\" />
-        <Folder Include="Services\Compra\" />
-        <Folder Include="Services\Jogo\" />
-        <Folder Include="Services\Promocao\" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
