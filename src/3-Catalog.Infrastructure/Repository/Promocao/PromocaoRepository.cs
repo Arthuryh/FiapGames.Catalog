@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Repository
 {
-    public class PromocaoRepositorio(CatalogContext _context) : IPromocaoRepository
+    public class PromocaoRepository(CatalogContext _context) : IPromocaoRepository
     {
         public async Task Add(Promocao promocao)
         {

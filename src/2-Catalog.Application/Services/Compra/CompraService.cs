@@ -4,7 +4,7 @@ using Interfaces;
 
 namespace Services
 {
-    public class CompraServico : ICompraService
+    public class CompraService : ICompraService
     {
         private readonly ICompraRepository _repo;
         private readonly IJogoRepository _jogoRepo;
@@ -17,7 +17,7 @@ namespace Services
         */
         private readonly IBibliotecaService _bibliotecaServico;
 
-        public CompraServico
+        public CompraService
         (
             ICompraRepository repo, 
             IJogoRepository jogoRepo,

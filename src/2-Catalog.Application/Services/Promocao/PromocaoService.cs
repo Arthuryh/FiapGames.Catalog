@@ -4,11 +4,11 @@ using Interfaces;
 
 namespace Services
 {
-    public class PromocaoServico : IPromocaoService
+    public class PromocaoService : IPromocaoService
     {
         private readonly IPromocaoRepository _repo;
 
-        public PromocaoServico(IPromocaoRepository repo)
+        public PromocaoService(IPromocaoRepository repo)
         {
             _repo = repo;
         }

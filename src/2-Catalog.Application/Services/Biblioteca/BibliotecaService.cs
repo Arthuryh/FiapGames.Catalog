@@ -8,12 +8,12 @@ using Interfaces;
 
 namespace Services
 {
-    public class BibliotecaServico : IBibliotecaService
+    public class BibliotecaService : IBibliotecaService
     {
         private readonly IBibliotecaRepository _repo;
         private readonly IJogoRepository _jogoRepo;
 
-        public BibliotecaServico(IBibliotecaRepository repo, IJogoRepository jogoRepo)
+        public BibliotecaService(IBibliotecaRepository repo, IJogoRepository jogoRepo)
         {
             _repo = repo;
             _jogoRepo = jogoRepo;

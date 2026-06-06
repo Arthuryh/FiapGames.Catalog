@@ -4,12 +4,12 @@ using Interfaces;
 
 namespace Services
 {
-    public class JogoServico : IJogoService
+    public class JogoService : IJogoService
     {
         private readonly IJogoRepository _repo;
         private readonly IPromocaoRepository _promoRepo;
 
-        public JogoServico(IJogoRepository repo, IPromocaoRepository promoRepo)
+        public JogoService(IJogoRepository repo, IPromocaoRepository promoRepo)
         {
             _repo = repo;
             _promoRepo = promoRepo;

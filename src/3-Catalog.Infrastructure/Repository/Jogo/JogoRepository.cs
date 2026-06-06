@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Repository
 {
-    public class JogoRepositorio(CatalogContext _context) : IJogoRepository
+    public class JogoRepository(CatalogContext _context) : IJogoRepository
     {
         public async Task Add(Jogo jogo)
         {

@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  catalog-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fiapgames-catalog-api
+    ports:
+      - "8082:8082"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Sobrescreve o LocalDB para apontar para o contêiner SQL Server
+      ConnectionStrings__FIAPGamesConnection: "Server=sqlserver-catalog;Database=fiapgames_catalog;User Id=sa;Password=RootPassword123!;TrustServerCertificate=True;"
+      Jwt__Key: "ChaveSuperSecretaFiapGamesEAD12MuitoLongaParaGarantirSeguranca123!"
+      Jwt__Issuer: "FiapGamesApi"
+      Jwt__Audience: "FiapGamesClients"
+    depends_on:
+      sqlserver-catalog:
+        condition: service_healthy
+    networks:
+      - fiapgames-network
+
+  sqlserver-catalog:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fiapgames-catalog-db
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "RootPassword123!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-catalog-data:/var/opt/mssql
+    healthcheck:
+      # Verifica se o SQL Server está pronto para aceitar conexões
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-U", "sa", "-P", "RootPassword123!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - fiapgames-network
+
+volumes:
+  sqlserver-catalog-data:
+
+networks:
+  fiapgames-network:

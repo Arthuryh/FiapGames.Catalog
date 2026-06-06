@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Repository
 {
-    public class CompraRepositorio(CatalogContext _context) : ICompraRepository
+    public class CompraRepository(CatalogContext _context) : ICompraRepository
     {
         public async Task Add(Compra compra)
         {
