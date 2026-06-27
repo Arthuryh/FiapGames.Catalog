@@ -11,7 +11,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       # Sobrescreve o LocalDB para apontar para o contêiner SQL Server
-      ConnectionStrings__FIAPGamesConnection: "Server=sqlserver-catalog,1433;Database=fiapgames_catalog;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
+      ConnectionStrings__FIAPGamesConnection: "Server=sqlserver-catalog,1433;Database=fiapgames_catalog;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;Encrypt=False;Connect Timeout=60;ConnectRetryCount=20;ConnectRetryInterval=5"
       Jwt__Key: "ChaveSuperSecretaFiapGamesEAD12MuitoLongaParaGarantirSeguranca123!"
       Jwt__Issuer: "FiapGamesApi"
       Jwt__Audience: "FiapGamesClients"
@@ -29,7 +29,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "YourStrong@Passw0rd"
     ports:
-      - "1434:1433"
+      - "1437:1433"
     volumes:
       - sqlserver-catalog-data:/var/opt/mssql
     healthcheck:
