@@ -219,3 +219,17 @@ dotnet test
 - O Catalog nao deve confiar em `UsuarioId` vindo no body da requisicao.
 - O usuario e o e-mail sao derivados do Bearer Token.
 - O Payment nao tem acesso ao token HTTP original, por isso o Catalog envia `EmailUsuario` no evento.
+
+## Kubernetes (autonomia por serviço)
+
+Manifests próprios do serviço estão em `k8s/`:
+
+- `catalog-api-configmap.yaml`
+- `catalog-api-secret.yaml`
+- `catalog-api-service.yaml`
+- `catalog-api-deployment.yaml`
+
+Separacao de configuracao:
+
+- ConfigMap: ambiente, urls, issuer/audience JWT, host e porta do RabbitMQ.
+- Secret: connection string completa, chave JWT e credenciais do RabbitMQ.

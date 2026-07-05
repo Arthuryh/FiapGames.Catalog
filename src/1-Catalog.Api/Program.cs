@@ -15,10 +15,10 @@ using Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var rabbitHost = builder.Configuration["RabbitMq:HostName"];
-var rabbitPort = int.Parse(builder.Configuration["RabbitMq:Port"] ?? "5672");
-var rabbitUser = builder.Configuration["RabbitMq:UserName"];
-var rabbitPass = builder.Configuration["RabbitMq:Password"];
+var rabbitHost = builder.Configuration["RabbitMq:HostName"] ?? "localhost";
+var rabbitPort = int.TryParse(builder.Configuration["RabbitMq:Port"], out var parsedPort) ? parsedPort : 5672;
+var rabbitUser = builder.Configuration["RabbitMq:UserName"] ?? "guest";
+var rabbitPass = builder.Configuration["RabbitMq:Password"] ?? "guest";
 
 builder.Services.AddSingleton<IConnectionFactory>(sp => new ConnectionFactory
 {
@@ -52,6 +52,11 @@ builder.Services.AddHostedService<BaixarEstoqueWorker>();
 var connectionString = builder.Configuration.GetConnectionString("FIAPGamesConnection");
 
 var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException("Configuration key Jwt:Key is required.");
+}
+
 var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>

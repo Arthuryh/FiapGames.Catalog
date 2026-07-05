@@ -8,9 +8,7 @@ namespace Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    /*[Authorize]
-     *COMENTADO COM INTUITO DE TESTE, MAS DEVE SER DESCOMENTADO PARA PRODUÇÃO
-     */
+    [Authorize]
     public class JogoController(IJogoService jogoService) : ControllerBase
     {
         [HttpPost]
