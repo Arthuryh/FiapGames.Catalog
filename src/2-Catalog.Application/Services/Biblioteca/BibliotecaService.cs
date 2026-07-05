@@ -1,10 +1,6 @@
-﻿using DTOs;
+using DTOs;
 using Entities;
 using Interfaces;
-
-/*
-    NECESSÁRIO REFATORAR A IMPLEMENTAÇÃO, POIS DIVERSOS MÉTODOS ESTÃO UTILIZANDO A CONTA DE USUÁRIO COMO PARÂMETRO
- */
 
 namespace Services
 {
@@ -24,6 +20,11 @@ namespace Services
             var biblioteca = await _repo.ObterPorConta(contaId);
             var jogo = await _jogoRepo.JogoPorId(jogoId);
 
+            if (jogo == null)
+                throw new ArgumentException("Jogo não encontrado: " + jogoId);
+
+            if (biblioteca.PossuiJogo(jogoId))
+                return;
 
             biblioteca.AdicionarJogo(jogo);
 
@@ -42,55 +43,35 @@ namespace Services
         public async Task<bool> PossuiJogo(int contaId, int jogoId)
         {
             var biblioteca = await _repo.ObterPorConta(contaId);
-            return biblioteca.Jogos.Any(x => x.JogoId == jogoId);
+            return biblioteca.PossuiJogo(jogoId);
         }
 
-        public async Task<JogoResponseDto> BibliotecaUsuario(int contaId)
+        public async Task<BibliotecaResponse> BibliotecaUsuario(int contaId)
         {
             var biblioteca = await _repo.ObterPorConta(contaId);
-            if (biblioteca == null)
-                throw new ArgumentException("Biblioteca não encontrada para a conta informada.");
-
             var listaJogos = new List<Jogo>();
 
             foreach (var item in biblioteca.Jogos)
             {
                 var jogo = await _jogoRepo.JogoPorId(item.JogoId);
                 if (jogo == null)
-                    throw new ArgumentException("Jogo não encontrado");
+                    throw new ArgumentException("Jogo não encontrado: " + item.JogoId);
 
                 listaJogos.Add(jogo);
             }
 
-
-            var bibliotecaResponse = new BibliotecaResponse
+            return new BibliotecaResponse
             (
                 biblioteca.IdConta,
                 listaJogos.Select(x => new BibliotecaJogoResponseDto
                 (
-                     x.Id,
-                     x.Nome,
-                     x.Preco,
-                     x.ObterPrecoAtual(),
-                     x.Descricao,
-                     x.DataLancamento
+                    x.Id,
+                    x.Nome,
+                    x.Preco,
+                    x.ObterPrecoAtual(),
+                    x.Descricao,
+                    x.DataLancamento
                 )).ToList()
-
-            );
-
-            /*return bibliotecaResponse; 
-             * IMPLEMENTAÇÃO ABAIXO APENAS PARA NÃO GERAR ERRO
-             */
-
-            return new JogoResponseDto
-            (
-                Id: 0,
-                Nome: string.Empty,
-                Preco: 0,
-                PrecoAtual: 0,
-                Descricao: string.Empty,
-                DataLancamento: DateTime.MinValue,
-                Promocao: null
             );
         }
     }

@@ -1,36 +1,42 @@
-﻿using Interfaces;
+using Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    /*[Authorize]
-     *COMENTADO COM INTUITO DE TESTE, MAS DEVE SER DESCOMENTADO PARA PRODUÇÃO
-     */
+    [Authorize]
     public class BibliotecaController(IBibliotecaService bibliotecaService) : ControllerBase
     {
-        [HttpDelete("{contaId}/jogos/{jogoId}")]
-        public async Task<IActionResult> RemoverJogo(int contaId, int jogoId)
+        [HttpDelete("jogos/{jogoId}")]
+        public async Task<IActionResult> RemoverJogo(int jogoId)
         {
-            try
-            {
-                await bibliotecaService.RemoverJogo(contaId, jogoId);
-                return Ok(new { mensagem = "Jogo removido da biblioteca" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { erro = ex.Message });
-            }
+            await bibliotecaService.RemoverJogo(ObterUsuarioId(), jogoId);
+            return Ok(new { mensagem = "Jogo removido da biblioteca" });
         }
 
-        [HttpGet("{contaId}")]
-        public async Task<IActionResult> BibliotecaUsuario(int contaId)
+        [HttpGet]
+        public async Task<IActionResult> BibliotecaUsuario()
         {
-            var biblioteca = await bibliotecaService.BibliotecaUsuario(contaId);
+            var biblioteca = await bibliotecaService.BibliotecaUsuario(ObterUsuarioId());
 
             return Ok(biblioteca);
+        }
+
+        private int ObterUsuarioId()
+        {
+            var claimValue =
+                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                User.FindFirstValue("sub") ??
+                User.FindFirstValue("id") ??
+                User.FindFirstValue("userId");
+
+            if (!int.TryParse(claimValue, out var usuarioId))
+                throw new UnauthorizedAccessException("Token sem identificador de usuario valido.");
+
+            return usuarioId;
         }
     }
 }

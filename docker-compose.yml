@@ -15,9 +15,31 @@ services:
       Jwt__Key: "ChaveSuperSecretaFiapGamesEAD12MuitoLongaParaGarantirSeguranca123!"
       Jwt__Issuer: "FiapGamesApi"
       Jwt__Audience: "FiapGamesClients"
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__Port: 5672
+      RabbitMq__UserName: guest
+      RabbitMq__Password: guest
     depends_on:
       sqlserver-catalog:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - fiapgames-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: fiapgames-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - fiapgames-network
 
@@ -50,3 +72,4 @@ volumes:
 
 networks:
   fiapgames-network:
+    name: fiapgames-network

@@ -44,6 +44,21 @@ namespace Context
             {
                 entity.HasKey(x => x.Id);
 
+                entity.Property(x => x.Status)
+                      .HasMaxLength(20)
+                      .IsRequired();
+
+                entity.Property(x => x.MotivoRecusa)
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.ValorTotalBruto)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(x => x.ValorTotalLiquido)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.HasIndex(x => x.UsuarioId);
+
                 entity.HasMany(x => x.CompraJogos)
                       .WithOne()
                       .HasForeignKey(x => x.CompraId);

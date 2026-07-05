@@ -12,7 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\3-Catalog.Infrastructure\3-Catalog.Infrastructure.csproj" />
         <ProjectReference Include="..\4-Catalog.Domain\4-Catalog.Domain.csproj" />
     </ItemGroup>
 </Project>

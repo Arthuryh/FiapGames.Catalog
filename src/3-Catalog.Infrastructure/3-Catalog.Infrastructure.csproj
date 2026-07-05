@@ -19,9 +19,11 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\4-Catalog.Domain\4-Catalog.Domain.csproj" />
+		<ProjectReference Include="..\2-Catalog.Application\2-Catalog.Application.csproj" />
 	</ItemGroup>
 </Project>

@@ -5,12 +5,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Middleware;
+using Messaging;
+using RabbitMQ.Client;
 using Repository;
 using Services;
 using System.Net;
 using System.Text;
+using Workers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var rabbitHost = builder.Configuration["RabbitMq:HostName"];
+var rabbitPort = int.Parse(builder.Configuration["RabbitMq:Port"] ?? "5672");
+var rabbitUser = builder.Configuration["RabbitMq:UserName"];
+var rabbitPass = builder.Configuration["RabbitMq:Password"];
+
+builder.Services.AddSingleton<IConnectionFactory>(sp => new ConnectionFactory
+{
+    HostName = rabbitHost,
+    Port = rabbitPort,
+    UserName = rabbitUser,
+    Password = rabbitPass,
+    AutomaticRecoveryEnabled = true,
+    NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+});
 
 // Add services to the container.
 
@@ -27,6 +45,9 @@ builder.Services.AddScoped<IBibliotecaService, BibliotecaService>();
 builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<IJogoService, JogoService>();
 builder.Services.AddScoped<IPromocaoService, PromocaoService>();
+
+builder.Services.AddSingleton<ICompraEventPublisher, RabbitMqCompraEventPublisher>();
+builder.Services.AddHostedService<BaixarEstoqueWorker>();
 
 var connectionString = builder.Configuration.GetConnectionString("FIAPGamesConnection");
 
@@ -126,6 +147,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

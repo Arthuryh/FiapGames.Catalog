@@ -9,7 +9,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+		<PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -21,6 +22,8 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\2-Catalog.Application\2-Catalog.Application.csproj" />
+		<ProjectReference Include="..\3-Catalog.Infrastructure\3-Catalog.Infrastructure.csproj" />
+		<ProjectReference Include="..\4-Catalog.Domain\4-Catalog.Domain.csproj" />
 	</ItemGroup>
 
 </Project>
