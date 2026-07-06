@@ -67,6 +67,8 @@ namespace Services
         public async Task<JogoResponseDto> JogoPorId(int idJogo)
         {
             var jogo = await _repo.JogoPorId(idJogo);
+            if(jogo == null)
+                throw new ArgumentException("Jogo não encontrado");
 
             return new JogoResponseDto(
                jogo.Id,
