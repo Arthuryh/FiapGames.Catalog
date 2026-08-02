@@ -1,5 +1,4 @@
 ﻿using Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Context
 {
@@ -9,9 +8,6 @@ namespace Context
         {
             try
             {
-                //garante que o banco está atualizado
-                await context.Database.MigrateAsync();
-
                 //se já tem dados, não faz nada
                 if (context.Jogos.Any())
                     return;

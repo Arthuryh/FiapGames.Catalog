@@ -29,7 +29,6 @@ WORKDIR /app
 EXPOSE 8082
 
 ENV ASPNETCORE_URLS=http://+:8082
-ENV ASPNETCORE_ENVIRONMENT=Development
 
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "1-Catalog.Api.dll"]

@@ -1,8 +1,16 @@
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
+using Authentication;
 using Context;
 using Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Middleware;
 using Messaging;
@@ -10,17 +18,31 @@ using RabbitMQ.Client;
 using Repository;
 using Services;
 using System.Net;
-using System.Text;
 using Workers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultUriValue = Environment.GetEnvironmentVariable("KeyVaultUri");
+    if (!Uri.TryCreate(keyVaultUriValue, UriKind.Absolute, out var keyVaultUri) ||
+        keyVaultUri.Scheme != Uri.UriSchemeHttps)
+    {
+        throw new InvalidOperationException(
+            "Environment variable KeyVaultUri must contain a valid HTTPS URI.");
+    }
+
+    builder.Configuration.AddAzureKeyVault(
+        keyVaultUri,
+        new DefaultAzureCredential());
+}
 
 var rabbitHost = builder.Configuration["RabbitMq:HostName"] ?? "localhost";
 var rabbitPort = int.TryParse(builder.Configuration["RabbitMq:Port"], out var parsedPort) ? parsedPort : 5672;
 var rabbitUser = builder.Configuration["RabbitMq:UserName"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMq:Password"] ?? "guest";
 
-builder.Services.AddSingleton<IConnectionFactory>(sp => new ConnectionFactory
+var rabbitConnectionFactory = new ConnectionFactory
 {
     HostName = rabbitHost,
     Port = rabbitPort,
@@ -28,10 +50,18 @@ builder.Services.AddSingleton<IConnectionFactory>(sp => new ConnectionFactory
     Password = rabbitPass,
     AutomaticRecoveryEnabled = true,
     NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
-});
+};
+var rabbitHealthConnection = new Lazy<Task<IConnection>>(
+    () => rabbitConnectionFactory.CreateConnectionAsync());
+
+builder.Services.AddSingleton<IConnectionFactory>(rabbitConnectionFactory);
 
 // Add services to the container.
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+}
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -50,14 +80,13 @@ builder.Services.AddSingleton<ICompraEventPublisher, RabbitMqCompraEventPublishe
 builder.Services.AddHostedService<BaixarEstoqueWorker>();
 
 var connectionString = builder.Configuration.GetConnectionString("FIAPGamesConnection");
-
-var jwtKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrWhiteSpace(jwtKey))
+if (string.IsNullOrWhiteSpace(connectionString))
 {
-    throw new InvalidOperationException("Configuration key Jwt:Key is required.");
+    throw new InvalidOperationException(
+        "Connection string FIAPGamesConnection is required.");
 }
 
-var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
+var jwksUri = ResolveJwksUri(builder.Configuration);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -66,17 +95,22 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Em prod, mude para true
+    options.ConfigurationManager =
+        new ConfigurationManager<OpenIdConnectConfiguration>(
+            jwksUri.AbsoluteUri,
+            new JwksConfigurationRetriever(),
+            new HttpDocumentRetriever { RequireHttps = false });
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        RequireSignedTokens = true,
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
         ValidateIssuer = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidateAudience = true,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidateLifetime = true,
+        ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
         ClockSkew = TimeSpan.Zero // Remove o tempo de tolerância padrão do .NET
     };
 });
@@ -116,6 +150,14 @@ builder.Services.AddDbContext<CatalogContext>(opts =>
                     errorNumbersToAdd: null);
             }));
 
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddSqlServer(connectionString, name: "sqlserver", tags: ["ready"])
+    .AddRabbitMQ(
+        _ => rabbitHealthConnection.Value,
+        name: "rabbitmq",
+        tags: ["ready"]);
+
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -141,48 +183,68 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+if (args.Contains("--migrate", StringComparer.OrdinalIgnoreCase))
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<CatalogContext>();
+
+    await context.Database.MigrateAsync();
+    await DbInitializer.SeedAsync(context);
+
+    Console.WriteLine("Catalog database migrations and seeds applied successfully.");
+    return;
+}
+
 app.UseMiddleware<ExceptionMiddleware>();
 
 
+app.UseSwagger();
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/health"),
+    branch => branch.UseHttpsRedirection());
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-await InitializeDatabaseAsync(app);
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.Run();
 
-static async Task InitializeDatabaseAsync(WebApplication app)
+static Uri ResolveJwksUri(IConfiguration configuration)
 {
-    var logger = app.Logger;
-    const int maxAttempts = 20;
-
-    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    var configuredJwksUri = configuration["Jwt:JwksUri"];
+    if (!string.IsNullOrWhiteSpace(configuredJwksUri) &&
+        Uri.TryCreate(configuredJwksUri, UriKind.Absolute, out var jwksUri) &&
+        IsHttpUri(jwksUri))
     {
-        try
-        {
-            using var scope = app.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<CatalogContext>();
-            await DbInitializer.SeedAsync(context);
-            logger.LogInformation("Database initialized successfully.");
-            return;
-        }
-        catch (Exception ex) when (attempt < maxAttempts)
-        {
-            logger.LogWarning(ex,
-                "Database initialization failed (attempt {Attempt}/{MaxAttempts}). Retrying in 5 seconds...",
-                attempt,
-                maxAttempts);
-            await Task.Delay(TimeSpan.FromSeconds(5));
-        }
+        return jwksUri;
     }
+
+    var authority = configuration["Jwt:Authority"]?.TrimEnd('/');
+    if (!string.IsNullOrWhiteSpace(authority) &&
+        Uri.TryCreate($"{authority}/.well-known/jwks", UriKind.Absolute, out jwksUri) &&
+        IsHttpUri(jwksUri))
+    {
+        return jwksUri;
+    }
+
+    throw new InvalidOperationException(
+        "Configure Jwt:JwksUri or a valid absolute Jwt:Authority.");
 }
+
+static bool IsHttpUri(Uri uri) =>
+    uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+    uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);

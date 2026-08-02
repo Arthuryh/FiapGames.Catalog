@@ -67,6 +67,7 @@ namespace Context
             builder.Entity<CompraJogo>(entity =>
             {
                 entity.HasKey(x => new { x.CompraId, x.JogoId });
+                entity.Property(x => x.PrecoAplicado).HasPrecision(18, 2);
             });
 
             builder.Entity<Jogo>(entity =>
