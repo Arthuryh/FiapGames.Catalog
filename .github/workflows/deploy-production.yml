@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - azureContainer
   workflow_dispatch:
 
 permissions:
