@@ -79,11 +79,11 @@ builder.Services.AddScoped<IPromocaoService, PromocaoService>();
 builder.Services.AddSingleton<ICompraEventPublisher, RabbitMqCompraEventPublisher>();
 builder.Services.AddHostedService<BaixarEstoqueWorker>();
 
-var connectionString = builder.Configuration.GetConnectionString("FIAPGamesConnection");
+var connectionString = builder.Configuration.GetConnectionString("CatalogConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
-        "Connection string FIAPGamesConnection is required.");
+        "Connection string CatalogConnection is required.");
 }
 
 var jwksUri = ResolveJwksUri(builder.Configuration);
