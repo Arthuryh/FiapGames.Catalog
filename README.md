@@ -1,5 +1,19 @@
 # FiapGames.Catalog
 
+## Producao no Azure
+
+O Catalog e acessado externamente somente pelo Azure API Management:
+
+```text
+https://apim-fiapgames-prod.azure-api.net/catalog
+```
+
+Todas as operacoes exigem `Authorization: Bearer <token>`. O APIM valida issuer, audience, expiracao e assinatura RS256; a API repete a validacao usando o JWKS publicado pelo Auth atraves do proprio gateway. O acesso direto ao Container App e bloqueado por restricao de IP.
+
+Configuracoes sensiveis de SQL, RabbitMQ e JWT sao carregadas do Azure Key Vault. O worker RabbitMQ usa fila principal com DLX/DLQ e envia falhas com `BasicNack(requeue: false)`.
+
+O pipeline em `.github/workflows/deploy-production.yml` publica a imagem no ACR, executa `--migrate` em um Container Apps Job efemero e atualiza a API somente apos sucesso. Health checks: `/health/live` e `/health/ready`.
+
 Microservico responsavel pelo catalogo de jogos, promocoes, compras e biblioteca do usuario na plataforma FiapGames.
 
 O Catalog e a porta de entrada do fluxo de compra: a API recebe os jogos escolhidos, extrai o usuario e o e-mail do Bearer Token, registra a compra como pendente e publica a solicitacao no RabbitMQ para o microservico de Payment.
