@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Middleware;
 using Messaging;
+using Prometheus;
 using RabbitMQ.Client;
 using Repository;
 using Services;
@@ -212,6 +213,7 @@ if (args.Contains("--migrate", StringComparer.OrdinalIgnoreCase))
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseHttpMetrics();
 
 
 app.UseSwagger();
@@ -228,6 +230,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapMetrics("/metrics");
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live")
