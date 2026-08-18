@@ -66,6 +66,22 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnectionString;
+        options.InstanceName = "FiapGamesCatalog:";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+
+builder.Services.AddScoped<ICatalogCacheService, CatalogCacheService>();
+
 builder.Services.AddScoped<IBibliotecaRepository, BibliotecaRepository>();
 builder.Services.AddScoped<ICompraRepository, CompraRepository>();
 builder.Services.AddScoped<IJogoRepository, JogoRepository>();

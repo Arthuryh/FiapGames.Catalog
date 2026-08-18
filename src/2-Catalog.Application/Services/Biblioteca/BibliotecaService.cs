@@ -8,11 +8,13 @@ namespace Services
     {
         private readonly IBibliotecaRepository _repo;
         private readonly IJogoRepository _jogoRepo;
+        private readonly ICatalogCacheService _cacheService;
 
-        public BibliotecaService(IBibliotecaRepository repo, IJogoRepository jogoRepo)
+        public BibliotecaService(IBibliotecaRepository repo, IJogoRepository jogoRepo, ICatalogCacheService cacheService)
         {
             _repo = repo;
             _jogoRepo = jogoRepo;
+            _cacheService = cacheService;
         }
 
         public async Task AdicionarJogo(int contaId, int jogoId)
@@ -29,6 +31,7 @@ namespace Services
             biblioteca.AdicionarJogo(jogo);
 
             await _repo.Atualizar(biblioteca);
+            await _cacheService.RemoveAsync($"catalog:biblioteca:{contaId}");
         }
 
         public async Task RemoverJogo(int contaId, int jogoId)
@@ -38,6 +41,7 @@ namespace Services
             biblioteca.RemoverJogo(jogoId);
 
             await _repo.Atualizar(biblioteca);
+            await _cacheService.RemoveAsync($"catalog:biblioteca:{contaId}");
         }
 
         public async Task<bool> PossuiJogo(int contaId, int jogoId)
@@ -48,6 +52,11 @@ namespace Services
 
         public async Task<BibliotecaResponse> BibliotecaUsuario(int contaId)
         {
+            var cacheKey = $"catalog:biblioteca:{contaId}";
+            var cached = await _cacheService.GetAsync<BibliotecaResponse>(cacheKey);
+            if (cached != null)
+                return cached;
+
             var biblioteca = await _repo.ObterPorConta(contaId);
             var listaJogos = new List<Jogo>();
 
@@ -60,7 +69,7 @@ namespace Services
                 listaJogos.Add(jogo);
             }
 
-            return new BibliotecaResponse
+            var response = new BibliotecaResponse
             (
                 biblioteca.IdConta,
                 listaJogos.Select(x => new BibliotecaJogoResponseDto
@@ -73,6 +82,9 @@ namespace Services
                     x.DataLancamento
                 )).ToList()
             );
+
+            await _cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(2));
+            return response;
         }
     }
 }
