@@ -12,6 +12,8 @@ public sealed class RabbitMqCompraEventPublisher : ICompraEventPublisher, IAsync
     private const string ExchangeName = "catalogo.exchange";
     private const string QueueName = "pagamento.compra.solicitada";
     private const string RoutingKey = "catalogo.compra.solicitada";
+    private const string DlxExchangeName = "pagamento.compra.solicitada.dlx.exchange";
+    private const string DlxRoutingKey = "pagamento.compra.solicitada.falha";
 
     private readonly IConnectionFactory _connectionFactory;
     private readonly ILogger<RabbitMqCompraEventPublisher> _logger;
@@ -97,6 +99,11 @@ public sealed class RabbitMqCompraEventPublisher : ICompraEventPublisher, IAsync
             durable: true,
             exclusive: false,
             autoDelete: false,
+            arguments: new Dictionary<string, object?>
+            {
+                ["x-dead-letter-exchange"] = DlxExchangeName,
+                ["x-dead-letter-routing-key"] = DlxRoutingKey
+            },
             cancellationToken: cancellationToken);
 
         await channel.QueueBindAsync(
