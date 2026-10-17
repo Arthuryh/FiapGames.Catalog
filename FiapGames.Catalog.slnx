@@ -5,4 +5,7 @@
     <Project Path="src/3-Catalog.Infrastructure/3-Catalog.Infrastructure.csproj" />
     <Project Path="src/4-Catalog.Domain/4-Catalog.Domain.csproj" />
   </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Catalog.Infrastructure.Test/Catalog.Infrastructure.Test.csproj" />
+  </Folder>
 </Solution>

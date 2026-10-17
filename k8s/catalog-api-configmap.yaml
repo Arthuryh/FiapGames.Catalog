@@ -5,7 +5,7 @@ metadata:
   labels:
     app: catalog-api
 data:
-  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_ENVIRONMENT: Production
   ASPNETCORE_URLS: http://+:8082
   Jwt__Issuer: FiapGamesApi
   Jwt__Audience: FiapGamesClients

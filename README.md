@@ -154,15 +154,15 @@ Exemplo de `appsettings.json`:
     "FIAPGamesConnection": "Server=(localdb)\\mssqllocaldb;Database=fiapgames_catalog;Trusted_Connection=True;MultipleActiveResultSets=true"
   },
   "Jwt": {
-    "Key": "ChaveSuperSecretaFiapGamesEAD12MuitoLongaParaGarantirSeguranca123!",
+    "Key": "${AUTH_JWT_KEY}",
     "Issuer": "FiapGamesApi",
     "Audience": "FiapGamesClients"
   },
   "RabbitMq": {
     "HostName": "127.0.0.1",
     "Port": 5672,
-    "UserName": "guest",
-    "Password": "guest"
+    "UserName": "${RABBITMQ_USERNAME}",
+    "Password": "${RABBITMQ_PASSWORD}"
   }
 }
 ```

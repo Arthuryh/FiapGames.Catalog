@@ -11,10 +11,12 @@ spec:
     metadata:
       labels:
         app: catalog-api
+        azure.workload.identity/use: "true"
     spec:
+      serviceAccountName: catalog-api
       containers:
         - name: catalog-api
-          image: fiapgames/catalog-api:latest
+          image: acrfiapgamesprod64f434dd.azurecr.io/catalog-api:bootstrap
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
@@ -29,6 +31,10 @@ spec:
                 configMapKeyRef:
                   name: catalog-api-config
                   key: ASPNETCORE_URLS
+            - name: KeyVaultUri
+              value: https://kv-fiapgames-64f434dd.vault.azure.net/
+            - name: AZURE_CLIENT_ID
+              value: dfff11eb-a350-4ccb-a466-dee3265a9bf1
             - name: Jwt__Issuer
               valueFrom:
                 configMapKeyRef:
@@ -49,33 +55,27 @@ spec:
                 configMapKeyRef:
                   name: catalog-api-config
                   key: RabbitMq__Port
-            - name: ConnectionStrings__FIAPGamesConnection
-              valueFrom:
-                secretKeyRef:
-                  name: catalog-api-secret
-                  key: ConnectionStrings__FIAPGamesConnection
-            - name: Jwt__Key
-              valueFrom:
-                secretKeyRef:
-                  name: catalog-api-secret
-                  key: Jwt__Key
-            - name: RabbitMq__UserName
-              valueFrom:
-                secretKeyRef:
-                  name: catalog-api-secret
-                  key: RabbitMq__UserName
-            - name: RabbitMq__Password
-              valueFrom:
-                secretKeyRef:
-                  name: catalog-api-secret
-                  key: RabbitMq__Password
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health/ready
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
               port: 8082
             initialDelaySeconds: 20
             periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 8082
-            initialDelaySeconds: 30
-            periodSeconds: 20
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
