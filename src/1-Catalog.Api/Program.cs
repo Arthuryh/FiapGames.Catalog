@@ -38,6 +38,8 @@ if (!builder.Environment.IsDevelopment())
         new DefaultAzureCredential());
 }
 
+builder.Configuration.AddEnvironmentVariables();
+
 var rabbitHost = builder.Configuration["RabbitMq:HostName"] ?? "localhost";
 var rabbitPort = int.TryParse(builder.Configuration["RabbitMq:Port"], out var parsedPort) ? parsedPort : 5672;
 var rabbitUser = builder.Configuration["RabbitMq:UserName"] ?? "guest";
@@ -78,6 +80,9 @@ if (!string.IsNullOrWhiteSpace(redisConnectionString))
 }
 else
 {
+    if (builder.Environment.IsProduction())
+        throw new InvalidOperationException("Redis:ConnectionString is required in Production.");
+
     builder.Services.AddDistributedMemoryCache();
 }
 
@@ -95,6 +100,26 @@ builder.Services.AddScoped<IPromocaoService, PromocaoService>();
 
 builder.Services.AddSingleton<ICompraEventPublisher, RabbitMqCompraEventPublisher>();
 builder.Services.AddHostedService<BaixarEstoqueWorker>();
+
+var elasticsearchEndpoint = builder.Configuration["Elasticsearch:Endpoint"];
+if (!string.IsNullOrWhiteSpace(elasticsearchEndpoint))
+{
+    builder.Services.AddHttpClient<IJogoSearchService, ElasticsearchJogoSearchService>(client =>
+    {
+        client.BaseAddress = new Uri(elasticsearchEndpoint.TrimEnd('/') + "/");
+        var apiKey = builder.Configuration["Elasticsearch:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(apiKey))
+            client.DefaultRequestHeaders.Authorization = new("ApiKey", apiKey);
+    });
+}
+else if (builder.Environment.IsProduction())
+{
+    throw new InvalidOperationException("Elasticsearch:Endpoint is required in Production.");
+}
+else
+{
+    builder.Services.AddSingleton<IJogoSearchService, NoOpJogoSearchService>();
+}
 
 var connectionString = builder.Configuration.GetConnectionString("CatalogConnection");
 if (string.IsNullOrWhiteSpace(connectionString))

@@ -9,12 +9,18 @@ namespace Services
         private readonly IJogoRepository _repo;
         private readonly IPromocaoRepository _promoRepo;
         private readonly ICatalogCacheService _cacheService;
+        private readonly IJogoSearchService _searchService;
 
-        public JogoService(IJogoRepository repo, IPromocaoRepository promoRepo, ICatalogCacheService cacheService)
+        public JogoService(
+            IJogoRepository repo,
+            IPromocaoRepository promoRepo,
+            ICatalogCacheService cacheService,
+            IJogoSearchService searchService)
         {
             _repo = repo;
             _promoRepo = promoRepo;
             _cacheService = cacheService;
+            _searchService = searchService;
         }
 
         public async Task Criar(CriarJogoDto dto)
@@ -22,6 +28,20 @@ namespace Services
             var jogo = new Jogo(dto.Nome, dto.Preco, dto.Descricao);
             await _repo.Add(jogo);
             await _cacheService.RemoveAsync("catalog:jogos:todos");
+            await _searchService.IndexarAsync(jogo);
+        }
+
+        public async Task Atualizar(AtualizarJogoDto dto)
+        {
+            var jogo = await _repo.JogoPorId(dto.Id);
+            if (jogo is null)
+                throw new ArgumentException("Jogo não encontrado", nameof(dto.Id));
+
+            jogo.Atualizar(dto.Nome, dto.Preco, dto.Descricao);
+            await _repo.Update(jogo);
+            await _cacheService.RemoveAsync("catalog:jogos:todos");
+            await _cacheService.RemoveAsync($"catalog:jogo:{dto.Id}");
+            await _searchService.IndexarAsync(jogo);
         }
 
         public async Task AplicarPromocao(AplicarPromocaoDto dto)
@@ -43,7 +63,14 @@ namespace Services
             await _repo.Update(jogo);
             await _cacheService.RemoveAsync("catalog:jogos:todos");
             await _cacheService.RemoveAsync($"catalog:jogo:{dto.JogoId}");
+            await _searchService.IndexarAsync(jogo);
         }
+
+        public Task<IReadOnlyList<JogoResponseDto>> Buscar(
+            string termo,
+            int limite,
+            CancellationToken cancellationToken = default)
+            => _searchService.BuscarAsync(termo, limite, cancellationToken);
 
         public async Task<IEnumerable<JogoResponseDto>> ListaJogos()
         {

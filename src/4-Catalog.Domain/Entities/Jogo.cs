@@ -39,6 +39,22 @@
             return Preco;
         }
 
+        public void Atualizar(string nome, decimal preco, string descricao)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+                throw new ArgumentException("Nome do jogo é obrigatório", nameof(nome));
+
+            if (string.IsNullOrWhiteSpace(descricao))
+                throw new ArgumentException("Descrição do jogo é obrigatória", nameof(descricao));
+
+            if (preco <= 0)
+                throw new ArgumentException("Preço precisa ser maior que 0.00", nameof(preco));
+
+            Nome = nome;
+            Preco = preco;
+            Descricao = descricao;
+        }
+
         public void AplicarPromocao(Promocao promocao)
         {
             if (!promocao.EstaAtiva())

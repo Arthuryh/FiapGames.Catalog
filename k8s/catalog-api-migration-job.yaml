@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: catalog-api-migration
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: catalog-api-migration
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: catalog-api
+      restartPolicy: Never
+      containers:
+        - name: catalog-api
+          image: acrfiapgamesprod64f434dd.azurecr.io/catalog-api:bootstrap
+          imagePullPolicy: IfNotPresent
+          args: ["--migrate"]
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: KeyVaultUri
+              value: https://kv-fiapgames-64f434dd.vault.azure.net/
+            - name: AZURE_CLIENT_ID
+              value: dfff11eb-a350-4ccb-a466-dee3265a9bf1

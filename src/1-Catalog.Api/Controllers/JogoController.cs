@@ -19,6 +19,14 @@ namespace Controllers
             return Ok();
         }
 
+        [HttpPut]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Atualizar(AtualizarJogoDto dto)
+        {
+            await jogoService.Atualizar(dto);
+            return NoContent();
+        }
+
         [HttpPost("promocao")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AplicarPromo(AplicarPromocaoDto dto)
@@ -39,6 +47,19 @@ namespace Controllers
         {
             var jogo = await jogoService.JogoPorId(id);
             return Ok(jogo);
+        }
+
+        [HttpGet("/search")]
+        public async Task<IActionResult> Buscar(
+            [FromQuery] string q,
+            [FromQuery] int limite = 20,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return BadRequest(new { erro = "O parâmetro 'q' é obrigatório." });
+
+            var resultados = await jogoService.Buscar(q.Trim(), Math.Clamp(limite, 1, 100), cancellationToken);
+            return Ok(resultados);
         }
     }
 }
